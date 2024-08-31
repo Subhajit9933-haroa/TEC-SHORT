@@ -65,11 +65,10 @@ if uploaded_images:
             comments = []
         
         # Display image and description
-        st.image(image_path, caption=image_name, use_column_width=True)
-        st.write(f"**Description**: {description}")
+        st.image(image_path, caption=description, use_column_width=True)
         st.write(f"👍 {likes} Likes | 👎 {dislikes} Dislikes")
 
-        # Like and Dislike buttons
+        # Like and Dislike buttons without displaying the image name
         col1, col2 = st.columns([1, 1])
         if f"like_{image_name}" not in st.session_state:
             st.session_state[f"like_{image_name}"] = likes
@@ -77,14 +76,14 @@ if uploaded_images:
             st.session_state[f"dislike_{image_name}"] = dislikes
 
         with col1:
-            if st.button(f"Like {image_name}", key=f"like_{image_name}_btn"):
+            if st.button("Like", key=f"like_{image_name}_btn"):
                 st.session_state[f"like_{image_name}"] += 1
                 metadata["likes"] = st.session_state[f"like_{image_name}"]
                 with open(metadata_path, "w") as f:
                     json.dump(metadata, f)
 
         with col2:
-            if st.button(f"Dislike {image_name}", key=f"dislike_{image_name}_btn"):
+            if st.button("Dislike", key=f"dislike_{image_name}_btn"):
                 st.session_state[f"dislike_{image_name}"] += 1
                 metadata["dislikes"] = st.session_state[f"dislike_{image_name}"]
                 with open(metadata_path, "w") as f:
@@ -95,8 +94,8 @@ if uploaded_images:
         for comment in comments:
             st.write(f"- {comment}")
         
-        new_comment = st.text_input(f"Add a comment for {image_name}", key=f"comment_{image_name}")
-        if st.button(f"Submit Comment {image_name}", key=f"submit_comment_{image_name}_btn"):
+        new_comment = st.text_input("Add a comment", key=f"comment_{image_name}")
+        if st.button("Submit Comment", key=f"submit_comment_{image_name}_btn"):
             if new_comment:
                 comments.append(new_comment)
                 metadata["comments"] = comments
