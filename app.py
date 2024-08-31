@@ -11,8 +11,8 @@ if not os.path.exists('metadata'):
     os.makedirs('metadata')
 
 # Streamlit title and description
-st.title("Photo Uploading Website with Like, Dislike, and Comments")
-st.write("Upload your photos along with a description, and interact with other uploads!")
+st.title("Photo Uploading Website with Like and Dislike")
+st.write("Upload your photos and interact with other uploads!")
 
 # Photo upload widget
 uploaded_file = st.file_uploader("Choose a photo...", type=["jpg", "jpeg", "png"])
@@ -28,13 +28,12 @@ if st.button("Upload"):
         with open(image_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
         
-        # Save the description, likes, dislikes, and comments as metadata
+        # Save the description, likes, dislikes as metadata
         metadata_path = os.path.join("metadata", uploaded_file.name + ".json")
         metadata = {
             "description": description,
             "likes": 0,
-            "dislikes": 0,
-            "comments": []
+            "dislikes": 0
         }
         with open(metadata_path, "w") as f:
             json.dump(metadata, f)
@@ -43,7 +42,7 @@ if st.button("Upload"):
     else:
         st.error("Please upload a photo and enter a description.")
 
-# Display uploaded images and their metadata (likes, dislikes, comments)
+# Display uploaded images and their metadata (likes, dislikes)
 st.write("### Uploaded Photos with Interactions")
 uploaded_images = os.listdir('uploads')
 
@@ -58,11 +57,9 @@ if uploaded_images:
                 description = metadata.get("description", "No description available")
                 likes = metadata.get("likes", 0)
                 dislikes = metadata.get("dislikes", 0)
-                comments = metadata.get("comments", [])
         else:
             description = "No description available"
             likes, dislikes = 0, 0
-            comments = []
         
         # Display image and description
         st.image(image_path, caption=description, use_column_width=True)
@@ -89,25 +86,5 @@ if uploaded_images:
                 with open(metadata_path, "w") as f:
                     json.dump(metadata, f)
 
-        # Comment section with form handling
-        st.write("#### Comments")
-        if comments:
-            # Display the most recent comment
-            most_recent_comment = comments[-1]
-            st.write(f"- {most_recent_comment}")
-
-        with st.form(key=f"comment_form_{image_name}"):
-            new_comment = st.text_input("Add a comment", key=f"comment_{image_name}")
-            submit_button = st.form_submit_button("Submit Comment")
-            if submit_button:
-                if new_comment:
-                    comments.append(new_comment)
-                    metadata["comments"] = comments
-                    with open(metadata_path, "w") as f:
-                        json.dump(metadata, f)
-                    # Update session state
-                    st.session_state[f"comments_{image_name}"] = comments
-                else:
-                    st.error("Comment cannot be empty.")
 else:
     st.write("No images uploaded yet.")
