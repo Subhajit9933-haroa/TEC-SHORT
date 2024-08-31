@@ -11,17 +11,19 @@ if not os.path.exists('metadata'):
     os.makedirs('metadata')
 
 # Streamlit title and description
-st.title("Photo Uploading Website with Like and Dislike")
-st.write("Upload your photos and interact with other uploads!")
+st.set_page_config(page_title="Photo Gallery", layout="wide")
+st.title("📸 Photo Uploading Website")
+st.write("Upload your photos and interact with them by liking or disliking!")
 
 # Photo upload widget
-uploaded_file = st.file_uploader("Choose a photo...", type=["jpg", "jpeg", "png"])
+st.sidebar.header("Upload Photo")
+uploaded_file = st.sidebar.file_uploader("Choose a photo...", type=["jpg", "jpeg", "png"])
 
 # Text input widget for description
-description = st.text_area("Enter a description for the photo")
+description = st.sidebar.text_area("Enter a description for the photo")
 
 # Button to submit the photo and text
-if st.button("Upload"):
+if st.sidebar.button("Upload"):
     if uploaded_file is not None and description:
         # Save the image
         image_path = os.path.join("uploads", uploaded_file.name)
@@ -38,16 +40,17 @@ if st.button("Upload"):
         with open(metadata_path, "w") as f:
             json.dump(metadata, f)
 
-        st.success(f"Uploaded and saved: {uploaded_file.name} with description")
+        st.sidebar.success(f"Uploaded and saved: {uploaded_file.name} with description")
     else:
-        st.error("Please upload a photo and enter a description.")
+        st.sidebar.error("Please upload a photo and enter a description.")
 
 # Display uploaded images and their metadata (likes, dislikes)
-st.write("### Uploaded Photos with Interactions")
+st.write("### Uploaded Photos")
 uploaded_images = os.listdir('uploads')
 
 if uploaded_images:
-    for image_name in uploaded_images:
+    cols = st.columns(3)  # Adjust the number of columns as needed
+    for i, image_name in enumerate(uploaded_images):
         image_path = os.path.join("uploads", image_name)
         metadata_path = os.path.join("metadata", image_name + ".json")
         
@@ -61,30 +64,28 @@ if uploaded_images:
             description = "No description available"
             likes, dislikes = 0, 0
         
-        # Display image and description
-        st.image(image_path, caption=description, use_column_width=True)
-        
-        # Display Like and Dislike counts
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.write(f"👍 {likes} Likes")
-            if st.button("Like", key=f"like_{image_name}_btn"):
-                if f"like_{image_name}" not in st.session_state:
-                    st.session_state[f"like_{image_name}"] = likes
-                st.session_state[f"like_{image_name}"] += 1
-                metadata["likes"] = st.session_state[f"like_{image_name}"]
-                with open(metadata_path, "w") as f:
-                    json.dump(metadata, f)
-        
-        with col2:
-            st.write(f"👎 {dislikes} Dislikes")
-            if st.button("Dislike", key=f"dislike_{image_name}_btn"):
-                if f"dislike_{image_name}" not in st.session_state:
-                    st.session_state[f"dislike_{image_name}"] = dislikes
-                st.session_state[f"dislike_{image_name}"] += 1
-                metadata["dislikes"] = st.session_state[f"dislike_{image_name}"]
-                with open(metadata_path, "w") as f:
-                    json.dump(metadata, f)
-
+        # Display image and description in a grid layout
+        with cols[i % 3]:  # Use modulo to cycle through columns
+            st.image(image_path, caption=description, use_column_width=True)
+            st.write(f"**Likes:** {likes}  |  **Dislikes:** {dislikes}")
+            
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button("Like", key=f"like_{image_name}_btn"):
+                    if f"like_{image_name}" not in st.session_state:
+                        st.session_state[f"like_{image_name}"] = likes
+                    st.session_state[f"like_{image_name}"] += 1
+                    metadata["likes"] = st.session_state[f"like_{image_name}"]
+                    with open(metadata_path, "w") as f:
+                        json.dump(metadata, f)
+            
+            with col2:
+                if st.button("Dislike", key=f"dislike_{image_name}_btn"):
+                    if f"dislike_{image_name}" not in st.session_state:
+                        st.session_state[f"dislike_{image_name}"] = dislikes
+                    st.session_state[f"dislike_{image_name}"] += 1
+                    metadata["dislikes"] = st.session_state[f"dislike_{image_name}"]
+                    with open(metadata_path, "w") as f:
+                        json.dump(metadata, f)
 else:
     st.write("No images uploaded yet.")
