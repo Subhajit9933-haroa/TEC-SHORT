@@ -71,20 +71,24 @@ if uploaded_images:
 
         # Like and Dislike buttons
         col1, col2 = st.columns([1, 1])
+        if f"like_{image_name}" not in st.session_state:
+            st.session_state[f"like_{image_name}"] = likes
+        if f"dislike_{image_name}" not in st.session_state:
+            st.session_state[f"dislike_{image_name}"] = dislikes
+
         with col1:
-            if st.button(f"Like {image_name}", key=f"like_{image_name}"):
-                likes += 1
-                metadata["likes"] = likes
+            if st.button(f"Like {image_name}", key=f"like_{image_name}_btn"):
+                st.session_state[f"like_{image_name}"] += 1
+                metadata["likes"] = st.session_state[f"like_{image_name}"]
                 with open(metadata_path, "w") as f:
                     json.dump(metadata, f)
-                st.experimental_rerun()
+
         with col2:
-            if st.button(f"Dislike {image_name}", key=f"dislike_{image_name}"):
-                dislikes += 1
-                metadata["dislikes"] = dislikes
+            if st.button(f"Dislike {image_name}", key=f"dislike_{image_name}_btn"):
+                st.session_state[f"dislike_{image_name}"] += 1
+                metadata["dislikes"] = st.session_state[f"dislike_{image_name}"]
                 with open(metadata_path, "w") as f:
                     json.dump(metadata, f)
-                st.experimental_rerun()
 
         # Comment section
         st.write("#### Comments")
@@ -92,13 +96,13 @@ if uploaded_images:
             st.write(f"- {comment}")
         
         new_comment = st.text_input(f"Add a comment for {image_name}", key=f"comment_{image_name}")
-        if st.button(f"Submit Comment {image_name}", key=f"submit_comment_{image_name}"):
+        if st.button(f"Submit Comment {image_name}", key=f"submit_comment_{image_name}_btn"):
             if new_comment:
                 comments.append(new_comment)
                 metadata["comments"] = comments
                 with open(metadata_path, "w") as f:
                     json.dump(metadata, f)
-                st.experimental_rerun()
+                st.session_state[f"comment_{image_name}"] = ""  # Clear input after submit
             else:
                 st.error("Comment cannot be empty.")
 else:
