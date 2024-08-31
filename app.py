@@ -89,12 +89,11 @@ if uploaded_images:
                 with open(metadata_path, "w") as f:
                     json.dump(metadata, f)
 
-        # Comment section
+        # Comment section with form handling
         st.write("#### Comments")
         for comment in comments:
             st.write(f"- {comment}")
 
-        # Handle comment input within the same form to avoid direct session state manipulation issues
         with st.form(key=f"comment_form_{image_name}"):
             new_comment = st.text_input("Add a comment", key=f"comment_{image_name}")
             submit_button = st.form_submit_button("Submit Comment")
@@ -104,8 +103,7 @@ if uploaded_images:
                     metadata["comments"] = comments
                     with open(metadata_path, "w") as f:
                         json.dump(metadata, f)
-                    # Clear the comment input field
-                    st.experimental_rerun()  # Rerun the script to refresh the input field
+                    st.experimental_rerun()  # Refresh the page to show updated comments
                 else:
                     st.error("Comment cannot be empty.")
 else:
