@@ -12,7 +12,7 @@ if not os.path.exists('metadata'):
 
 # Streamlit title and description
 st.set_page_config(page_title="Photo Gallery", layout="wide")
-st.title("📸 Photo Uploading Website")
+st.title("TEC SHORT")
 st.write("Upload your photos and interact with them by liking or disliking!")
 
 # Photo upload widget
@@ -45,7 +45,7 @@ if st.sidebar.button("Upload"):
         st.sidebar.error("Please upload a photo and enter a description.")
 
 # Display uploaded images and their metadata (likes, dislikes)
-st.write("### Uploaded Photos")
+st.write("### TEC SHORT")
 uploaded_images = os.listdir('uploads')
 
 if uploaded_images:
