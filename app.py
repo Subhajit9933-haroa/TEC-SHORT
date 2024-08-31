@@ -9,7 +9,11 @@ def post_area(uploaded_image_path=None):
     if uploaded_image_path:
         st.image(uploaded_image_path, caption="Uploaded image.", use_column_width=True)
     else:
-        st.image("post_image.jpg", caption="This is a post image.", use_column_width=True)
+        default_image_path = "post_image.jpg"
+        if os.path.exists(default_image_path):
+            st.image(default_image_path, caption="This is a post image.", use_column_width=True)
+        else:
+            st.write("Default image not found.")
     st.write("This is a sample post. It mimics the Facebook post style.")
     st.write("#### Comments")
     st.text_area("Write a comment...", key="comment" + str(st.session_state.get('post_id', 0)))
@@ -21,7 +25,12 @@ def main():
 
     # Sidebar for Login
     with st.sidebar:
-        st.image("TEC SHORT_logo.png", width=200)
+        logo_path = "facebook_logo.png"
+        if os.path.exists(logo_path):
+            st.image(logo_path, width=200)
+        else:
+            st.write("Logo image not found.")
+        
         st.write("### Login")
         username = st.text_input("Username")
         password = st.text_input("Password", type='password')
@@ -32,8 +41,8 @@ def main():
             st.write("Please log in to continue.")
 
     # Header
-    st.title("TEC SHORT")
-    st.subheader("WELLCOME TO TEC SHORT WEB PAGE")
+    st.title("Facebook Clone")
+    st.subheader("A simple UI made with Streamlit")
 
     # Top Navigation Bar
     col1, col2, col3 = st.columns(3)
@@ -50,9 +59,12 @@ def main():
     if uploaded_file is not None:
         # Save uploaded image to local directory
         uploaded_image_path = os.path.join(os.getcwd(), uploaded_file.name)
-        with open(uploaded_image_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        st.success("Image uploaded and saved successfully!")
+        try:
+            with open(uploaded_image_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.success("Image uploaded and saved successfully!")
+        except Exception as e:
+            st.error(f"Failed to save image: {e}")
     else:
         uploaded_image_path = None
 
