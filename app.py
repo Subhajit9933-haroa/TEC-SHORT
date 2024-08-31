@@ -93,16 +93,20 @@ if uploaded_images:
         st.write("#### Comments")
         for comment in comments:
             st.write(f"- {comment}")
-        
-        new_comment = st.text_input("Add a comment", key=f"comment_{image_name}")
-        if st.button("Submit Comment", key=f"submit_comment_{image_name}_btn"):
-            if new_comment:
-                comments.append(new_comment)
-                metadata["comments"] = comments
-                with open(metadata_path, "w") as f:
-                    json.dump(metadata, f)
-                st.session_state[f"comment_{image_name}"] = ""  # Clear input after submit
-            else:
-                st.error("Comment cannot be empty.")
+
+        # Handle comment input within the same form to avoid direct session state manipulation issues
+        with st.form(key=f"comment_form_{image_name}"):
+            new_comment = st.text_input("Add a comment", key=f"comment_{image_name}")
+            submit_button = st.form_submit_button("Submit Comment")
+            if submit_button:
+                if new_comment:
+                    comments.append(new_comment)
+                    metadata["comments"] = comments
+                    with open(metadata_path, "w") as f:
+                        json.dump(metadata, f)
+                    # Clear the comment input field
+                    st.experimental_rerun()  # Rerun the script to refresh the input field
+                else:
+                    st.error("Comment cannot be empty.")
 else:
     st.write("No images uploaded yet.")
