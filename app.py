@@ -103,9 +103,14 @@ if uploaded_images:
                     metadata["comments"] = comments
                     with open(metadata_path, "w") as f:
                         json.dump(metadata, f)
-                    # Reload metadata to reflect changes
-                    st.experimental_rerun()  # Refresh the page to show updated comments
+                    # Update comments dynamically
+                    st.session_state[f"comments_{image_name}"] = comments
                 else:
                     st.error("Comment cannot be empty.")
+        
+        # Display updated comments
+        if f"comments_{image_name}" in st.session_state:
+            for comment in st.session_state[f"comments_{image_name}"]:
+                st.write(f"- {comment}")
 else:
     st.write("No images uploaded yet.")
