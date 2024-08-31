@@ -91,8 +91,10 @@ if uploaded_images:
 
         # Comment section with form handling
         st.write("#### Comments")
-        for comment in comments:
-            st.write(f"- {comment}")
+        if comments:
+            # Display the most recent comment
+            most_recent_comment = comments[-1]
+            st.write(f"- {most_recent_comment}")
 
         with st.form(key=f"comment_form_{image_name}"):
             new_comment = st.text_input("Add a comment", key=f"comment_{image_name}")
@@ -103,14 +105,9 @@ if uploaded_images:
                     metadata["comments"] = comments
                     with open(metadata_path, "w") as f:
                         json.dump(metadata, f)
-                    # Update comments dynamically
+                    # Update session state
                     st.session_state[f"comments_{image_name}"] = comments
                 else:
                     st.error("Comment cannot be empty.")
-        
-        # Display updated comments
-        if f"comments_{image_name}" in st.session_state:
-            for comment in st.session_state[f"comments_{image_name}"]:
-                st.write(f"- {comment}")
 else:
     st.write("No images uploaded yet.")
