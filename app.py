@@ -66,9 +66,8 @@ if uploaded_images:
         
         # Display image and description
         st.image(image_path, caption=description, use_column_width=True)
-        st.write(f"👍 {likes} Likes | 👎 {dislikes} Dislikes")
-
-        # Like and Dislike buttons without displaying the image name
+        
+        # Like and Dislike buttons without showing counts
         col1, col2 = st.columns([1, 1])
         if f"like_{image_name}" not in st.session_state:
             st.session_state[f"like_{image_name}"] = likes
