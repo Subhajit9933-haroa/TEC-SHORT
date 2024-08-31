@@ -72,7 +72,9 @@ if uploaded_images:
         with col1:
             st.write(f"👍 {likes} Likes")
             if st.button("Like", key=f"like_{image_name}_btn"):
-                st.session_state[f"like_{image_name}"] = st.session_state.get(f"like_{image_name}", likes) + 1
+                if f"like_{image_name}" not in st.session_state:
+                    st.session_state[f"like_{image_name}"] = likes
+                st.session_state[f"like_{image_name}"] += 1
                 metadata["likes"] = st.session_state[f"like_{image_name}"]
                 with open(metadata_path, "w") as f:
                     json.dump(metadata, f)
@@ -80,7 +82,9 @@ if uploaded_images:
         with col2:
             st.write(f"👎 {dislikes} Dislikes")
             if st.button("Dislike", key=f"dislike_{image_name}_btn"):
-                st.session_state[f"dislike_{image_name}"] = st.session_state.get(f"dislike_{image_name}", dislikes) + 1
+                if f"dislike_{image_name}" not in st.session_state:
+                    st.session_state[f"dislike_{image_name}"] = dislikes
+                st.session_state[f"dislike_{image_name}"] += 1
                 metadata["dislikes"] = st.session_state[f"dislike_{image_name}"]
                 with open(metadata_path, "w") as f:
                     json.dump(metadata, f)
