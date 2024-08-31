@@ -103,10 +103,7 @@ if uploaded_images:
                     metadata["comments"] = comments
                     with open(metadata_path, "w") as f:
                         json.dump(metadata, f)
-                    # Reload the metadata to reflect changes
-                    with open(metadata_path, "r") as f:
-                        metadata = json.load(f)
-                        comments = metadata.get("comments", [])
+                    # Reload metadata to reflect changes
                     st.experimental_rerun()  # Refresh the page to show updated comments
                 else:
                     st.error("Comment cannot be empty.")
