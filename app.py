@@ -38,7 +38,7 @@ if st.button("Upload"):
         st.error("Please upload a photo and enter a description.")
 
 # Display uploaded images and their descriptions
-st.write("### Uploaded Photos with Descriptions")
+st.write("### latest photos")
 uploaded_images = os.listdir('uploads')
 
 if uploaded_images:
