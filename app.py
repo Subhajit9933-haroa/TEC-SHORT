@@ -1,91 +1,77 @@
-import streamlit as st
-from PIL import Image
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 import os
-import json
+from werkzeug.utils import secure_filename
+from datetime import datetime
 
-# Create folders to store uploaded images and text metadata
-if not os.path.exists('uploads'):
-    os.makedirs('uploads')
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-if not os.path.exists('metadata'):
-    os.makedirs('metadata')
+# Configuration
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv'}
+MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100 MB limit
 
-# Streamlit title and description
-st.set_page_config(page_title="Photo Gallery", layout="wide")
-st.title("TEC SHORT")
-st.write("Upload your photos and interact with them by liking or disliking!")
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-# Photo upload widget
-st.sidebar.header("Upload Photo")
-uploaded_file = st.sidebar.file_uploader("Choose a photo...", type=["jpg", "jpeg", "png"])
+# Ensure the upload folder exists
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
-# Text input widget for description
-description = st.sidebar.text_area("Enter a description for the photo")
+# In-memory storage for videos (Replace with a database in production)
+videos = []
 
-# Button to submit the photo and text
-if st.sidebar.button("Upload"):
-    if uploaded_file is not None and description:
-        # Save the image
-        image_path = os.path.join("uploads", uploaded_file.name)
-        with open(image_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        
-        # Save the description, likes, dislikes as metadata
-        metadata_path = os.path.join("metadata", uploaded_file.name + ".json")
-        metadata = {
-            "description": description,
-            "likes": 0,
-            "dislikes": 0
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['POST'])
+def upload_video():
+    if 'video' not in request.files:
+        return jsonify({'message': 'No video part in the request.'}), 400
+
+    video = request.files['video']
+    title = request.form.get('title')
+
+    if video.filename == '':
+        return jsonify({'message': 'No selected video.'}), 400
+
+    if video and allowed_file(video.filename):
+        filename = secure_filename(video.filename)
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_filename = f"{timestamp}_{filename}"
+        video_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        video.save(video_path)
+
+        # Create a video entry
+        new_video = {
+            'id': len(videos) + 1,
+            'title': title,
+            'video_url': f"/uploads/{unique_filename}",
+            'thumbnail_url': "/assets/thumbnail.jpg",  # Placeholder thumbnail
+            'views': 0,  # Initialize views to 0
+            'uploaded_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        with open(metadata_path, "w") as f:
-            json.dump(metadata, f)
 
-        st.sidebar.success(f"Uploaded and saved: {uploaded_file.name} with description")
+        videos.append(new_video)
+
+        return jsonify({'message': 'Video uploaded successfully!', 'video': new_video}), 200
     else:
-        st.sidebar.error("Please upload a photo and enter a description.")
+        return jsonify({'message': 'Invalid file type. Only video files are allowed.'}), 400
 
-# Display uploaded images and their metadata (likes, dislikes)
-st.write("### TEC SHORT")
-uploaded_images = os.listdir('uploads')
+@app.route('/videos', methods=['GET'])
+def get_videos():
+    return jsonify(videos), 200
 
-if uploaded_images:
-    cols = st.columns(3)  # Adjust the number of columns as needed
-    for i, image_name in enumerate(uploaded_images):
-        image_path = os.path.join("uploads", image_name)
-        metadata_path = os.path.join("metadata", image_name + ".json")
-        
-        if os.path.exists(metadata_path):
-            with open(metadata_path, "r") as f:
-                metadata = json.load(f)
-                description = metadata.get("description", "No description available")
-                likes = metadata.get("likes", 0)
-                dislikes = metadata.get("dislikes", 0)
-        else:
-            description = "No description available"
-            likes, dislikes = 0, 0
-        
-        # Display image and description in a grid layout
-        with cols[i % 3]:  # Use modulo to cycle through columns
-            st.image(image_path, caption=description, use_column_width=True)
-            st.write(f"**Likes:** {likes}  |  **Dislikes:** {dislikes}")
-            
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                if st.button("Like", key=f"like_{image_name}_btn"):
-                    if f"like_{image_name}" not in st.session_state:
-                        st.session_state[f"like_{image_name}"] = likes
-                    st.session_state[f"like_{image_name}"] += 1
-                    metadata["likes"] = st.session_state[f"like_{image_name}"]
-                    with open(metadata_path, "w") as f:
-                        json.dump(metadata, f)
-            
-            with col2:
-                if st.button("Dislike", key=f"dislike_{image_name}_btn"):
-                    if f"dislike_{image_name}" not in st.session_state:
-                        st.session_state[f"dislike_{image_name}"] = dislikes
-                    st.session_state[f"dislike_{image_name}"] += 1
-                    metadata["dislikes"] = st.session_state[f"dislike_{image_name}"]
-                    with open(metadata_path, "w") as f:
-                        json.dump(metadata, f)
-else:
-    st.write("No images uploaded yet.")
+@app.route('/uploads/<filename>', methods=['GET'])
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+# Serve assets (e.g., thumbnails)
+@app.route('/assets/<path:filename>', methods=['GET'])
+def assets(filename):
+    return send_from_directory('../frontend/assets', filename)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
