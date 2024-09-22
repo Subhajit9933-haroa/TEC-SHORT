@@ -5,44 +5,51 @@ import os
 if not os.path.exists("uploads"):
     os.makedirs("uploads")
 
-# Title of the web app
-st.title("Video Streaming and Uploading Website")
+# Sidebar for uploading videos
+st.sidebar.title("Upload Your Video")
+uploaded_file = st.sidebar.file_uploader("Choose a video file", type=["mp4", "avi", "mov", "mkv"])
 
-# File uploader for video files
-uploaded_file = st.file_uploader("Upload a video file", type=["mp4", "avi", "mov", "mkv"])
-
-# Check if the uploaded file is not None
+# Save the uploaded file
 if uploaded_file is not None:
     file_path = os.path.join("uploads", uploaded_file.name)
     
     # Check if the file already exists
     if os.path.exists(file_path):
-        st.warning(f"File '{uploaded_file.name}' already exists. Please upload a different file.")
+        st.sidebar.warning(f"File '{uploaded_file.name}' already exists.")
     else:
         # Save the uploaded video to the folder
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
-        
-        st.success(f"File '{uploaded_file.name}' uploaded successfully!")
+        st.sidebar.success(f"File '{uploaded_file.name}' uploaded successfully!")
 
-# Display list of already uploaded videos
+# Main title
+st.title("YourTube: Video Streaming")
+
+# Display search bar
+search_query = st.text_input("Search for a video", "")
+
+# Display list of uploaded videos
 st.subheader("Uploaded Videos")
-
-# Get all uploaded videos
 uploaded_videos = os.listdir("uploads")
 
-# Check if any videos have been uploaded
 if len(uploaded_videos) > 0:
-    # Dropdown to select which video to play
-    selected_video = st.selectbox("Select a video to play:", uploaded_videos)
+    # Filter videos based on search query
+    if search_query:
+        filtered_videos = [v for v in uploaded_videos if search_query.lower() in v.lower()]
+    else:
+        filtered_videos = uploaded_videos
 
-    # Show all video filenames
-    for video in uploaded_videos:
-        st.write(video)
-    
-    # Play the selected video
-    if selected_video:
-        video_path = os.path.join("uploads", selected_video)
-        st.video(video_path)
+    # Show videos in grid layout
+    num_columns = 3  # Number of videos per row
+    video_chunks = [filtered_videos[i:i + num_columns] for i in range(0, len(filtered_videos), num_columns)]
+
+    for chunk in video_chunks:
+        cols = st.columns(num_columns)
+        for i, video in enumerate(chunk):
+            with cols[i]:
+                st.image("https://via.placeholder.com/150", caption=video)  # Placeholder for thumbnail
+                if st.button(f"Play {video}", key=video):
+                    st.video(os.path.join("uploads", video))
 else:
     st.write("No videos uploaded yet.")
+
