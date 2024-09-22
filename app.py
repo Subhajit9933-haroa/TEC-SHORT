@@ -25,17 +25,19 @@ if uploaded_file is not None:
         
         st.success(f"File '{uploaded_file.name}' uploaded successfully!")
         
-        # Display video on the webpage
+        # Display the newly uploaded video
         st.video(file_path)
 
 # Display list of already uploaded videos
-st.subheader("Uploaded Videos")
+st.subheader("Select and Play an Uploaded Video")
 uploaded_videos = os.listdir("uploads")
 
 if len(uploaded_videos) > 0:
-    for video in uploaded_videos:
-        video_path = os.path.join("uploads", video)
-        st.write(video)
+    # Create a dropdown or radio button to allow selecting a video to play
+    selected_video = st.selectbox("Choose a video to play:", uploaded_videos)
+
+    if selected_video:
+        video_path = os.path.join("uploads", selected_video)
         st.video(video_path)
 else:
     st.write("No videos uploaded yet.")
