@@ -1,6 +1,5 @@
 import streamlit as st
 import os
-import shutil
 
 # Create an "uploads" folder to store videos if it doesn't exist
 if not os.path.exists("uploads"):
@@ -12,18 +11,22 @@ st.title("Video Streaming and Uploading Website")
 # File uploader for video files
 uploaded_file = st.file_uploader("Upload a video file", type=["mp4", "avi", "mov", "mkv"])
 
-# Save the uploaded file to the "uploads" folder
+# Check if the uploaded file is not None
 if uploaded_file is not None:
     file_path = os.path.join("uploads", uploaded_file.name)
     
-    # Save the uploaded video to the folder
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    
-    st.success(f"File '{uploaded_file.name}' uploaded successfully!")
-    
-    # Display video on the webpage
-    st.video(file_path)
+    # Check if the file already exists
+    if os.path.exists(file_path):
+        st.warning(f"File '{uploaded_file.name}' already exists. Please upload a different file.")
+    else:
+        # Save the uploaded video to the folder
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        
+        st.success(f"File '{uploaded_file.name}' uploaded successfully!")
+        
+        # Display video on the webpage
+        st.video(file_path)
 
 # Display list of already uploaded videos
 st.subheader("Uploaded Videos")
