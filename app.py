@@ -1,55 +1,34 @@
 import streamlit as st
-import os
 
-# Create an "uploads" folder to store videos if it doesn't exist
-if not os.path.exists("uploads"):
-    os.makedirs("uploads")
+# Title of the web application
+st.title("Form Fill-Up Application")
 
-# Sidebar for uploading videos
-st.sidebar.title("Upload Your Video")
-uploaded_file = st.sidebar.file_uploader("Choose a video file", type=["mp4", "avi", "mov", "mkv"])
+# Subheader
+st.subheader("Please fill out the form below:")
 
-# Save the uploaded file
-if uploaded_file is not None:
-    file_path = os.path.join("uploads", uploaded_file.name)
+# Form
+with st.form("user_form"):
+    # Input fields
+    name = st.text_input("Full Name", placeholder="Enter your name")
+    email = st.text_input("Email", placeholder="Enter your email")
+    age = st.number_input("Age", min_value=0, max_value=120, step=1)
+    gender = st.selectbox("Gender", options=["Select", "Male", "Female", "Other"])
+    country = st.text_input("Country", placeholder="Enter your country")
+    feedback = st.text_area("Feedback", placeholder="Enter your feedback here...")
     
-    # Check if the file already exists
-    if os.path.exists(file_path):
-        st.sidebar.warning(f"File '{uploaded_file.name}' already exists.")
+    # Submit button
+    submit_button = st.form_submit_button("Submit")
+
+# Display submitted data
+if submit_button:
+    if name and email and gender != "Select":
+        st.success("Form submitted successfully!")
+        st.write("### Submitted Information")
+        st.write(f"**Name:** {name}")
+        st.write(f"**Email:** {email}")
+        st.write(f"**Age:** {age}")
+        st.write(f"**Gender:** {gender}")
+        st.write(f"**Country:** {country}")
+        st.write(f"**Feedback:** {feedback}")
     else:
-        # Save the uploaded video to the folder
-        with open(file_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        st.sidebar.success(f"File '{uploaded_file.name}' uploaded successfully!")
-
-# Main title
-st.title("YourTube: Video Streaming")
-
-# Display search bar
-search_query = st.text_input("Search for a video", "")
-
-# Display list of uploaded videos
-st.subheader("Uploaded Videos")
-uploaded_videos = os.listdir("uploads")
-
-if len(uploaded_videos) > 0:
-    # Filter videos based on search query
-    if search_query:
-        filtered_videos = [v for v in uploaded_videos if search_query.lower() in v.lower()]
-    else:
-        filtered_videos = uploaded_videos
-
-    # Show videos in grid layout
-    num_columns = 3  # Number of videos per row
-    video_chunks = [filtered_videos[i:i + num_columns] for i in range(0, len(filtered_videos), num_columns)]
-
-    for chunk in video_chunks:
-        cols = st.columns(num_columns)
-        for i, video in enumerate(chunk):
-            with cols[i]:
-                st.image("https://via.placeholder.com/150", caption=video)  # Placeholder for thumbnail
-                if st.button(f"Play {video}", key=video):
-                    st.video(os.path.join("uploads", video))
-else:
-    st.write("No videos uploaded yet.")
-
+        st.error("Please fill in all required fields (Name, Email, and Gender).")
