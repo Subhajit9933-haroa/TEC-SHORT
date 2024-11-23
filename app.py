@@ -1,45 +1,64 @@
 import streamlit as st
-import cv2
-import tempfile
 import os
+from io import BytesIO
+import base64
 
-# Set the title and description
-st.title("Video Uploader and Viewer")
-st.write("Upload a video file and preview it below.")
+# Function to display video
+def show_video(video_path):
+    st.video(video_path, format="video/mp4")
 
-# Video upload functionality
-uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov", "mkv"])
+# Function to generate the "+" button
+def render_upload_button():
+    st.markdown("""
+        <style>
+        .upload-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background-color: #1dbf73;
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .upload-button:hover {
+            background: #17a567;
+        }
+        </style>
+        <div class="upload-button" onclick="document.getElementById('file_input').click()">+</div>
+        <input type="file" id="file_input" accept="video/*" style="display:none;" onchange="handleFileUpload(event)">
+    """, unsafe_allow_html=True)
 
-if uploaded_file is not None:
-    # Save the uploaded file temporarily
-    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as temp_file:
-        temp_file.write(uploaded_file.read())
-        temp_filepath = temp_file.name
+# Function to handle video upload and display
+def handle_file_upload():
+    uploaded_file = st.file_uploader("Upload a video", type=["mp4", "mov", "avi"])
+    if uploaded_file is not None:
+        # Save uploaded video to the Streamlit app directory
+        file_path = os.path.join("uploads", uploaded_file.name)
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
 
-    # Display the video player
-    st.video(temp_filepath)
+        # Display the video after upload
+        show_video(file_path)
+        st.success(f"Video {uploaded_file.name} uploaded successfully!")
 
-    # Extract video details using OpenCV
-    cap = cv2.VideoCapture(temp_filepath)
-    if cap.isOpened():
-        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        duration = frame_count / fps
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+# Main Streamlit page layout
+def main():
+    # Create a directory to store uploaded videos if it doesn't exist
+    if not os.path.exists("uploads"):
+        os.makedirs("uploads")
 
-        st.write(f"**Video Details:**")
-        st.write(f"- Resolution: {width}x{height}")
-        st.write(f"- Frame Count: {frame_count}")
-        st.write(f"- FPS: {fps}")
-        st.write(f"- Duration: {duration:.2f} seconds")
-    else:
-        st.error("Error reading the video file.")
-    cap.release()
+    # Display upload button
+    render_upload_button()
 
-    # Option to download the uploaded file
-    with open(temp_filepath, "rb") as file:
-        st.download_button("Download Video", file, uploaded_file.name)
+    # Handle file upload and display
+    handle_file_upload()
 
-    # Clean up the temporary file after use
-    os.remove(temp_filepath)
+if __name__ == "__main__":
+    main()
