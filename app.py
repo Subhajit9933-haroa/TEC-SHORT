@@ -1,34 +1,24 @@
 import streamlit as st
 
-# Initialize chat data and images
-if "chat_data" not in st.session_state:
-    st.session_state.chat_data = []  # Stores chat messages and images
+# Title of the app
+st.title("Chat App")
 
-# Function to display messages
-def display_chat():
-    for entry in st.session_state.chat_data:
-        if entry["type"] == "text":
-            st.write(f"**User:** {entry['content']}")
-        elif entry["type"] == "image":
-            st.image(entry["content"], caption="Uploaded Image", use_column_width=True)
+# Sidebar for user input
+user_name = st.sidebar.text_input("Enter your name")
+message = st.sidebar.text_area("Enter your message")
 
-# Title
-st.title("Group Chat and Photo Upload")
+# Initialize session state for storing messages
+if 'messages' not in st.session_state:
+    st.session_state['messages'] = []
 
-# Chat Input
-with st.form("chat_form"):
-    message = st.text_input("Type your message:")
-    submitted = st.form_submit_button("Send")
-    if submitted and message.strip():
-        st.session_state.chat_data.append({"type": "text", "content": message})
-        st.experimental_rerun()
+# Send button
+if st.sidebar.button("Send"):
+    if user_name and message:
+        # Add message to chat history
+        st.session_state['messages'].append(f"{user_name}: {message}")
+    else:
+        st.sidebar.error("Please enter both your name and a message")
 
-# Image Upload
-uploaded_image = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
-if uploaded_image is not None:
-    st.session_state.chat_data.append({"type": "image", "content": uploaded_image})
-    st.experimental_rerun()
-
-# Display chat
-st.subheader("Chat Messages")
-display_chat()
+# Display chat history
+for msg in st.session_state['messages']:
+    st.write(msg)
