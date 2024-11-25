@@ -1,146 +1,96 @@
 import streamlit as st
-import json
-from datetime import datetime
-import os
 
-# File paths
-USER_DB = "user_db.json"
-CHAT_HISTORY = "chat_history.json"
+# Set page configuration
+st.set_page_config(page_title="TikTok-Inspired Video Player", layout="centered")
 
-# Initialize files if they don't exist
-if not os.path.exists(USER_DB):
-    with open(USER_DB, "w") as f:
-        json.dump({}, f)
+# Custom CSS for TikTok-style layout and color scheme
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #141414;
+        color: white;
+        font-family: 'Arial', sans-serif;
+    }
+    .video-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100vh;
+        max-width: 400px; /* Mobile screen width */
+        background-color: #222;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    video {
+        width: 100%;
+        height: auto;
+        border-radius: 15px;
+    }
+    .control-bar {
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 400px; /* Align with the video frame */
+    }
+    button {
+        background-color: #FE2C55;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #FF5C75;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-if not os.path.exists(CHAT_HISTORY):
-    with open(CHAT_HISTORY, "w") as f:
-        json.dump([], f)
+# Header
+st.title("🎥 TikTok-Inspired Video Player")
 
-# Helper functions
-def load_users():
-    with open(USER_DB, "r") as f:
-        return json.load(f)
+# State to store videos
+if "videos" not in st.session_state:
+    st.session_state["videos"] = []  # Store uploaded videos
 
-def save_users(users):
-    with open(USER_DB, "w") as f:
-        json.dump(users, f)
+# Upload Section
+st.subheader("Upload a Video")
+uploaded_video = st.file_uploader("Choose a video file", type=["mp4", "mov", "avi", "mkv"])
+if uploaded_video:
+    st.session_state["videos"].append(uploaded_video)
 
-def load_chat():
-    with open(CHAT_HISTORY, "r") as f:
-        return json.load(f)
+# Show Uploaded Videos
+if st.session_state["videos"]:
+    video_index = st.session_state.get("video_index", 0)
 
-def save_chat(chat):
-    with open(CHAT_HISTORY, "w") as f:
-        json.dump(chat, f)
+    # Display the current video in a mobile-sized frame
+    st.markdown('<div class="video-container">', unsafe_allow_html=True)
+    st.video(st.session_state["videos"][video_index])
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# Authentication
-def login(username, password):
-    users = load_users()
-    if username in users and users[username] == password:
-        return True
-    return False
+    # Controls
+    st.markdown('<div class="control-bar">', unsafe_allow_html=True)
 
-def sign_up(username, password):
-    users = load_users()
-    if username in users:
-        return False  # Username already exists
-    users[username] = password
-    save_users(users)
-    return True
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("⬅️ Previous"):
+            video_index = (video_index - 1) % len(st.session_state["videos"])
+            st.session_state["video_index"] = video_index
+    with col2:
+        if st.button("🔄 Reload"):
+            st.experimental_rerun()
+    with col3:
+        if st.button("➡️ Next"):
+            video_index = (video_index + 1) % len(st.session_state["videos"])
+            st.session_state["video_index"] = video_index
 
-# Chat system
-def add_message(username, message, image=None):
-    chat = load_chat()
-    chat.append({
-        "username": username,
-        "message": message,
-        "image": image,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    })
-    save_chat(chat)
-
-def display_chat():
-    chat = load_chat()
-    for entry in chat:
-        st.markdown(f"**{entry['username']}** *({entry['timestamp']})*")
-        if entry["message"]:
-            st.markdown(entry["message"])
-        if entry["image"]:
-            st.image(entry["image"], use_column_width=True)
-        st.markdown("---")
-
-# Streamlit app
-st.set_page_config(page_title="Group Chat", page_icon="💬", layout="wide")
-
-# State management
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.username = ""
-
-if "new_message" not in st.session_state:
-    st.session_state.new_message = False
-
-# Sidebar login/signup
-st.sidebar.title("Authentication")
-if not st.session_state.logged_in:
-    auth_action = st.sidebar.radio("Choose an action", ["Login", "Sign Up"])
-
-    username = st.sidebar.text_input("Username")
-    password = st.sidebar.text_input("Password", type="password")
-
-    if auth_action == "Login":
-        if st.sidebar.button("Log In"):
-            if login(username, password):
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.sidebar.success(f"Welcome back, {username}!")
-            else:
-                st.sidebar.error("Invalid username or password.")
-
-    elif auth_action == "Sign Up":
-        if st.sidebar.button("Sign Up"):
-            if sign_up(username, password):
-                st.sidebar.success("Sign-up successful! Please log in.")
-            else:
-                st.sidebar.error("Username already exists.")
+    st.markdown('</div>', unsafe_allow_html=True)
 else:
-    st.sidebar.success(f"Logged in as {st.session_state.username}")
-    if st.sidebar.button("Log Out"):
-        st.session_state.logged_in = False
-        st.session_state.username = ""
-
-# Main chat interface
-if st.session_state.logged_in:
-    st.title("💬 Group Chat")
-    st.markdown(f"Welcome, **{st.session_state.username}**!")
-
-    # Chat messages
-    st.subheader("Chat Messages")
-    display_chat()
-
-    # Message input
-    st.subheader("Send a Message")
-    message = st.text_area("Type your message here", height=100)
-    uploaded_image = st.file_uploader("Upload an image (optional)", type=["png", "jpg", "jpeg"])
-
-    if st.button("Send"):
-        if message or uploaded_image:
-            os.makedirs("uploads", exist_ok=True)  # Ensure the folder exists
-            image_path = None
-            if uploaded_image:
-                image_path = f"uploads/{uploaded_image.name}"
-                with open(image_path, "wb") as f:
-                    f.write(uploaded_image.getbuffer())
-
-            add_message(st.session_state.username, message, image=image_path)
-            st.session_state.new_message = True
-        else:
-            st.error("Please enter a message or upload an image.")
-
-    # Chat refresh logic (removes need for manual rerun)
-    if st.session_state.new_message:
-        st.session_state.new_message = False
-        st.experimental_rerun()  # This should now be safe to trigger since the state is controlled
-else:
-    st.title("Welcome to Group Chat!")
-    st.markdown("Please log in or sign up to join the chat.")
+    st.write("No videos uploaded yet. Upload a video to get started!")
