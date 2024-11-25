@@ -137,11 +137,10 @@ if st.session_state.logged_in:
         else:
             st.error("Please enter a message or upload an image.")
 
-    # Handle message updates
+    # Refresh chat when a new message is sent
     if st.session_state.new_message:
         st.session_state.new_message = False
-        st.experimental_rerun()
-
+        st.experimental_rerun()  # This should now be safe to trigger since the state is controlled
 else:
     st.title("Welcome to Group Chat!")
     st.markdown("Please log in or sign up to join the chat.")
