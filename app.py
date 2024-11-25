@@ -1,86 +1,146 @@
 import streamlit as st
 import json
-import os
 from datetime import datetime
+import os
 
-# Initialize constants
-CHAT_FILE = "chat_history.json"
-UPLOAD_FOLDER = "uploaded_photos"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# File paths
+USER_DB = "user_db.json"
+CHAT_HISTORY = "chat_history.json"
 
-# Ensure chat file exists
-if not os.path.exists(CHAT_FILE):
-    with open(CHAT_FILE, "w") as file:
-        json.dump([], file)
+# Initialize files if they don't exist
+if not os.path.exists(USER_DB):
+    with open(USER_DB, "w") as f:
+        json.dump({}, f)
 
-# Load chat history
+if not os.path.exists(CHAT_HISTORY):
+    with open(CHAT_HISTORY, "w") as f:
+        json.dump([], f)
+
+
+# Helper functions
+def load_users():
+    with open(USER_DB, "r") as f:
+        return json.load(f)
+
+
+def save_users(users):
+    with open(USER_DB, "w") as f:
+        json.dump(users, f)
+
+
 def load_chat():
-    with open(CHAT_FILE, "r") as file:
-        return json.load(file)
+    with open(CHAT_HISTORY, "r") as f:
+        return json.load(f)
 
-# Save chat history
-def save_chat(chat_history):
-    with open(CHAT_FILE, "w") as file:
-        json.dump(chat_history, file)
 
-# Add a new entry to chat
-def add_to_chat(username, message=None, photo=None):
-    chat_history = load_chat()
-    chat_entry = {
+def save_chat(chat):
+    with open(CHAT_HISTORY, "w") as f:
+        json.dump(chat, f)
+
+
+# Authentication
+def login(username, password):
+    users = load_users()
+    if username in users and users[username] == password:
+        return True
+    return False
+
+
+def sign_up(username, password):
+    users = load_users()
+    if username in users:
+        return False  # Username already exists
+    users[username] = password
+    save_users(users)
+    return True
+
+
+# Chat system
+def add_message(username, message, image=None):
+    chat = load_chat()
+    chat.append({
         "username": username,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "message": message,
-        "photo": photo,
-    }
-    chat_history.append(chat_entry)
-    save_chat(chat_history)
+        "image": image,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+    save_chat(chat)
 
-# Display chat history
+
 def display_chat():
-    chat_history = load_chat()
-    for entry in chat_history:
-        st.write(f"**{entry['username']}** at *{entry['timestamp']}*")
+    chat = load_chat()
+    for entry in chat:
+        st.markdown(f"**{entry['username']}** *({entry['timestamp']})*")
         if entry["message"]:
-            st.write(entry["message"])
-        if entry["photo"]:
-            st.image(entry["photo"], width=200)
-        st.write("---")
+            st.markdown(entry["message"])
+        if entry["image"]:
+            st.image(entry["image"], use_column_width=True)
+        st.markdown("---")
 
-# Main app logic
-st.title("Group Chat App")
-st.sidebar.title("Login")
 
-# Fast login
-username = st.sidebar.text_input("Enter your username", "")
-if username:
-    st.sidebar.success(f"Logged in as {username}")
-    st.subheader(f"Welcome, {username}!")
+# Streamlit app
+st.set_page_config(page_title="Group Chat", page_icon="💬", layout="wide")
 
-    # Chat input area
-    with st.form(key="message_form"):
-        message_input = st.text_area("Type your message:")
-        submitted = st.form_submit_button("Send")
-        if submitted and message_input.strip():
-            add_to_chat(username, message=message_input.strip())
-            st.experimental_rerun()  # Refresh to show new messages
+# State management
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = ""
 
-    # Upload photo area
-    with st.form(key="photo_form"):
-        uploaded_file = st.file_uploader("Upload a photo:", type=["png", "jpg", "jpeg"])
-        photo_submitted = st.form_submit_button("Upload Photo")
-        if photo_submitted and uploaded_file:
-            photo_path = os.path.join(UPLOAD_FOLDER, uploaded_file.name)
-            with open(photo_path, "wb") as file:
-                file.write(uploaded_file.getbuffer())
-            add_to_chat(username, photo=photo_path)
-            st.success("Photo uploaded!")
-            st.experimental_rerun()  # Refresh to show new photo
+# Sidebar login/signup
+st.sidebar.title("Authentication")
+if not st.session_state.logged_in:
+    auth_action = st.sidebar.radio("Choose an action", ["Login", "Sign Up"])
 
-    # Display chat
-    st.markdown("### Chat History")
+    username = st.sidebar.text_input("Username")
+    password = st.sidebar.text_input("Password", type="password")
+
+    if auth_action == "Login":
+        if st.sidebar.button("Log In"):
+            if login(username, password):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.sidebar.success(f"Welcome back, {username}!")
+            else:
+                st.sidebar.error("Invalid username or password.")
+
+    elif auth_action == "Sign Up":
+        if st.sidebar.button("Sign Up"):
+            if sign_up(username, password):
+                st.sidebar.success("Sign-up successful! Please log in.")
+            else:
+                st.sidebar.error("Username already exists.")
+else:
+    st.sidebar.success(f"Logged in as {st.session_state.username}")
+    if st.sidebar.button("Log Out"):
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+
+# Main chat interface
+if st.session_state.logged_in:
+    st.title("💬 Group Chat")
+    st.markdown(f"Welcome, **{st.session_state.username}**!")
+
+    # Chat messages
+    st.subheader("Chat Messages")
     display_chat()
 
-    # Auto-refresh every 5 seconds
-    st.experimental_set_query_params(refresh=1)
+    # Message input
+    st.subheader("Send a Message")
+    message = st.text_area("Type your message here", height=100)
+    uploaded_image = st.file_uploader("Upload an image (optional)", type=["png", "jpg", "jpeg"])
+
+    if st.button("Send"):
+        if message or uploaded_image:
+            image_path = None
+            if uploaded_image:
+                image_path = f"uploads/{uploaded_image.name}"
+                with open(image_path, "wb") as f:
+                    f.write(uploaded_image.getbuffer())
+
+            add_message(st.session_state.username, message, image=image_path)
+            st.experimental_rerun()
+        else:
+            st.error("Please enter a message or upload an image.")
 else:
-    st.sidebar.info("Please log in to start chatting.")
+    st.title("Welcome to Group Chat!")
+    st.markdown("Please log in or sign up to join the chat.")
