@@ -137,7 +137,7 @@ if st.session_state.logged_in:
         else:
             st.error("Please enter a message or upload an image.")
 
-    # Refresh chat when a new message is sent
+    # Chat refresh logic (removes need for manual rerun)
     if st.session_state.new_message:
         st.session_state.new_message = False
         st.experimental_rerun()  # This should now be safe to trigger since the state is controlled
