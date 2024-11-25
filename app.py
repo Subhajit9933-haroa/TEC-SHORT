@@ -16,27 +16,22 @@ if not os.path.exists(CHAT_HISTORY):
     with open(CHAT_HISTORY, "w") as f:
         json.dump([], f)
 
-
 # Helper functions
 def load_users():
     with open(USER_DB, "r") as f:
         return json.load(f)
 
-
 def save_users(users):
     with open(USER_DB, "w") as f:
         json.dump(users, f)
-
 
 def load_chat():
     with open(CHAT_HISTORY, "r") as f:
         return json.load(f)
 
-
 def save_chat(chat):
     with open(CHAT_HISTORY, "w") as f:
         json.dump(chat, f)
-
 
 # Authentication
 def login(username, password):
@@ -45,7 +40,6 @@ def login(username, password):
         return True
     return False
 
-
 def sign_up(username, password):
     users = load_users()
     if username in users:
@@ -53,7 +47,6 @@ def sign_up(username, password):
     users[username] = password
     save_users(users)
     return True
-
 
 # Chat system
 def add_message(username, message, image=None):
@@ -66,7 +59,6 @@ def add_message(username, message, image=None):
     })
     save_chat(chat)
 
-
 def display_chat():
     chat = load_chat()
     for entry in chat:
@@ -77,7 +69,6 @@ def display_chat():
             st.image(entry["image"], use_column_width=True)
         st.markdown("---")
 
-
 # Streamlit app
 st.set_page_config(page_title="Group Chat", page_icon="💬", layout="wide")
 
@@ -85,6 +76,9 @@ st.set_page_config(page_title="Group Chat", page_icon="💬", layout="wide")
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
+
+if "new_message" not in st.session_state:
+    st.session_state.new_message = False
 
 # Sidebar login/signup
 st.sidebar.title("Authentication")
@@ -131,6 +125,7 @@ if st.session_state.logged_in:
 
     if st.button("Send"):
         if message or uploaded_image:
+            os.makedirs("uploads", exist_ok=True)  # Ensure the folder exists
             image_path = None
             if uploaded_image:
                 image_path = f"uploads/{uploaded_image.name}"
@@ -138,9 +133,15 @@ if st.session_state.logged_in:
                     f.write(uploaded_image.getbuffer())
 
             add_message(st.session_state.username, message, image=image_path)
-            st.experimental_rerun()
+            st.session_state.new_message = True
         else:
             st.error("Please enter a message or upload an image.")
+
+    # Handle message updates
+    if st.session_state.new_message:
+        st.session_state.new_message = False
+        st.experimental_rerun()
+
 else:
     st.title("Welcome to Group Chat!")
     st.markdown("Please log in or sign up to join the chat.")
