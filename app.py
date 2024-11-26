@@ -1,96 +1,52 @@
 import streamlit as st
+from datetime import datetime
 
-# Set page configuration
-st.set_page_config(page_title="TikTok-Inspired Video Player", layout="centered")
+# Initialize session state
+if "messages" not in st.session_state:
+    st.session_state["messages"] = []
 
-# Custom CSS for TikTok-style layout and color scheme
-st.markdown(
-    """
-    <style>
-    body {
-        background-color: #141414;
-        color: white;
-        font-family: 'Arial', sans-serif;
-    }
-    .video-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100vh;
-        max-width: 400px; /* Mobile screen width */
-        background-color: #222;
-        border-radius: 15px;
-        overflow: hidden;
-    }
-    video {
-        width: 100%;
-        height: auto;
-        border-radius: 15px;
-    }
-    .control-bar {
-        margin-top: 15px;
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-        max-width: 400px; /* Align with the video frame */
-    }
-    button {
-        background-color: #FE2C55;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 16px;
-        cursor: pointer;
-    }
-    button:hover {
-        background-color: #FF5C75;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Sidebar for chat list
+st.sidebar.title("Chats")
+st.sidebar.write("Contact 1")
+st.sidebar.write("Contact 2")
 
-# Header
-st.title("🎥 TikTok-Inspired Video Player")
+# Main Chat UI
+st.title("Chat (WhatsApp-like)")
 
-# State to store videos
-if "videos" not in st.session_state:
-    st.session_state["videos"] = []  # Store uploaded videos
+# Display messages
+st.write("### Messages")
+for msg in st.session_state["messages"]:
+    sender, text, timestamp = msg
+    if sender == "You":
+        # User messages on the right
+        st.markdown(
+            f"""
+            <div style='text-align: right; background: #dcf8c6; padding: 10px; border-radius: 10px; margin: 5px;'>
+                <b>{sender}:</b> {text} <br><small>{timestamp}</small>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        # Others' messages on the left
+        st.markdown(
+            f"""
+            <div style='text-align: left; background: #fff; padding: 10px; border-radius: 10px; margin: 5px;'>
+                <b>{sender}:</b> {text} <br><small>{timestamp}</small>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-# Upload Section
-st.subheader("Upload a Video")
-uploaded_video = st.file_uploader("Choose a video file", type=["mp4", "mov", "avi", "mkv"])
-if uploaded_video:
-    st.session_state["videos"].append(uploaded_video)
+# Input box for sending messages
+text_input = st.text_input("Type your message", placeholder="Type a message...")
 
-# Show Uploaded Videos
-if st.session_state["videos"]:
-    video_index = st.session_state.get("video_index", 0)
-
-    # Display the current video in a mobile-sized frame
-    st.markdown('<div class="video-container">', unsafe_allow_html=True)
-    st.video(st.session_state["videos"][video_index])
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Controls
-    st.markdown('<div class="control-bar">', unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("⬅️ Previous"):
-            video_index = (video_index - 1) % len(st.session_state["videos"])
-            st.session_state["video_index"] = video_index
-    with col2:
-        if st.button("🔄 Reload"):
-            st.experimental_rerun()
-    with col3:
-        if st.button("➡️ Next"):
-            video_index = (video_index + 1) % len(st.session_state["videos"])
-            st.session_state["video_index"] = video_index
-
-    st.markdown('</div>', unsafe_allow_html=True)
-else:
-    st.write("No videos uploaded yet. Upload a video to get started!")
+if st.button("Send"):
+    if text_input.strip():
+        # Append user message
+        st.session_state["messages"].append(("You", text_input, datetime.now().strftime("%H:%M")))
+        # Simulate a reply
+        st.session_state["messages"].append(
+            ("Friend", "Got your message!", datetime.now().strftime("%H:%M"))
+        )
+        st.experimental_rerun()
